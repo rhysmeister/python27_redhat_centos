@@ -1,0 +1,5 @@
+---
+- name: Converge
+  hosts: all
+  roles:
+    - role: python27_redhat_centos

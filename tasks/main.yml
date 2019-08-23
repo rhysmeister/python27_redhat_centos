@@ -1,0 +1,53 @@
+---
+# tasks file for python27_redhat_centos
+- name: Install packages required for build
+  yum:
+    name: "{{ build_packages }}"
+
+- name: Download python if required
+  local_action: get_url url="{{ python_download_url }}" dest=/tmp checksum="{{ python_sha256 }}"
+
+- name: Ensure python_build_root dir exists
+  file:
+    name: "{{ python_build_root }}"
+    state: directory
+
+- name: Unarchive python to directory
+  unarchive:
+    src: "/tmp/{{ python_archive }}"
+    dest: "{{ python_build_root }}"
+
+- name: Install python 2.7 without flattening system Python 2.6
+  shell: ./configure --enable-optimizations && make altinstall && touch /root/python27.success
+  args:
+    chdir: "{{ python_build_root }}/{{ python_directory }}"
+    creates: /root/python27.success
+
+- name: Verify setup (this cmd sends output to stderr?)
+  command: "{{ python_exec_path }} -V"
+  register: python_version
+  failed_when: python_expected_version != python_version.stderr
+
+- name: Ensure pip2.7 is available
+  shell: "{{ python_exec_path }} -m ensurepip --default-pip"
+  args:
+    creates: /usr/local/bin/pip2.7
+
+- name: Install virtualenv
+  shell: "{{ python_exec_path }} -m pip install virtualenv && touch /root/virtualenv.success"
+  args:
+    creates: /opt/src/virtualenv.success
+
+- name: Create a virtualenv
+  shell: virtualenv /opt/src/virtenv
+  args:
+    creates: /opt/src/virtenv
+
+- name: Get the python version the virtualenv is using
+  shell: source /opt/src/virtenv/bin/activate && python --version
+  register: virtualenv_python_version
+
+- name: Do we have the expected python version?
+  assert:
+    that:
+      - python_expected_version != virtualenv_python_version
