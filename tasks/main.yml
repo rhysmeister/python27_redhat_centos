@@ -27,6 +27,7 @@
   command: "{{ python_exec_path }} -V"
   register: python_version
   failed_when: python_expected_version != python_version.stderr
+  changed_when: python_expected_version != python_version.stderr
 
 - name: Ensure pip2.7 is available
   shell: "{{ python_exec_path }} -m ensurepip --default-pip"
@@ -36,16 +37,17 @@
 - name: Install virtualenv
   shell: "{{ python_exec_path }} -m pip install virtualenv && touch /root/virtualenv.success"
   args:
-    creates: /opt/src/virtualenv.success
+    creates: /root/virtualenv.success
 
 - name: Create a virtualenv
   shell: virtualenv /opt/src/virtenv
   args:
-    creates: /opt/src/virtenv
+    creates: /opt/src/virtenv/bin/activate
 
 - name: Get the python version the virtualenv is using
   shell: source /opt/src/virtenv/bin/activate && python --version
   register: virtualenv_python_version
+  changed_when: virtualenv_python_version.rc != 0
 
 - name: Do we have the expected python version?
   assert:
