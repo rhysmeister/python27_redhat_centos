@@ -1,3 +1,4 @@
+---
 galaxy_info:
   author: Rhys Campbell
   description: Install Python2.7 on RedHat/CentOS 6 systems alongside the default Python2.6
